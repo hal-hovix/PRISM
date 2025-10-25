@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY config /app/config
+COPY src/__init__.py /app/src/__init__.py
+COPY src/worker /app/src/worker
+COPY src/api/__init__.py /app/src/api/__init__.py
+COPY src/api/core /app/src/api/core
+COPY src/api/plugins /app/src/api/plugins
+
+RUN pip install --no-cache-dir pydantic==2.9.2 pydantic-settings==2.5.2 httpx==0.27.2
+
+CMD ["python", "-u", "src/worker/worker.py"]
+

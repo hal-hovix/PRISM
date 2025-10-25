@@ -1,0 +1,209 @@
+# 本番環境用 Docker Compose
+# version: '3.8'
+
+services:
+  PRISM-Redis:
+    image: redis:7-alpine
+    container_name: PRISM-Redis-Prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-defaultpassword}
+    networks:
+      - prism_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  PRISM-API:
+    container_name: PRISM-API-Prod
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${IMAGE_NAME:-prism}-api:${VERSION:-latest}
+    env_file:
+      - ./.env.production
+    environment:
+      - PRISM_ENV=production
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword}@PRISM-Redis:6379/0
+    ports:
+      - "8060:8000"
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    networks:
+      - prism_net
+    depends_on:
+      PRISM-Redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  PRISM-WEB:
+    container_name: PRISM-WEB-Prod
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${IMAGE_NAME:-prism}-web:${VERSION:-latest}
+    depends_on:
+      - PRISM-API
+    ports:
+      - "8061:80"
+    environment:
+      - API_BASE_URL=http://PRISM-API:8000
+    networks:
+      - prism_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  PRISM-WORKER:
+    container_name: PRISM-WORKER-Prod
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${IMAGE_NAME:-prism}-worker:${VERSION:-latest}
+    env_file:
+      - ./.env.production
+    environment:
+      - PRISM_ENV=production
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword}@PRISM-Redis:6379/0
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    networks:
+      - prism_net
+    depends_on:
+      PRISM-Redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+
+  PRISM-MCP:
+    container_name: PRISM-MCP-Prod
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${IMAGE_NAME:-prism}-mcp:${VERSION:-latest}
+    env_file:
+      - ./.env.production
+    environment:
+      - PRISM_ENV=production
+    ports:
+      - "8062:8062"
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    networks:
+      - prism_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8062/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+
+  # 監視システム
+  PRISM-Prometheus:
+    image: prom/prometheus:latest
+    container_name: PRISM-Prometheus-Prod
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - prism_net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  PRISM-Grafana:
+    image: grafana/grafana:latest
+    container_name: PRISM-Grafana-Prod
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+    networks:
+      - prism_net
+    depends_on:
+      - PRISM-Prometheus
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+
+networks:
+  prism_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

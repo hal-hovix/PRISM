@@ -1,0 +1,113 @@
+# version: "3.9"
+services:
+  PRISM-Redis:
+    image: redis:7-alpine
+    container_name: PRISM-Redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - prism_net
+    restart: unless-stopped
+
+  PRISM-API:
+    container_name: PRISM-API
+    image: prism-api:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file:
+      - ./.env
+    environment:
+      - PRISM_ENV=production
+    ports:
+      - "8060:8000"
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  PRISM-WEB:
+    container_name: PRISM-WEB
+    image: prism-web:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    depends_on:
+      - PRISM-API
+    ports:
+      - "8061:80"
+    environment:
+      - API_BASE_URL=http://api:8000
+
+  PRISM-WORKER:
+    container_name: PRISM-WORKER
+    image: prism-worker:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    env_file:
+      - ./.env
+    environment:
+      - PRISM_ENV=production
+      - PYTHONPATH=/app
+    depends_on:
+      - PRISM-API
+
+  PRISM-MCP:
+    container_name: PRISM-MCP
+    image: prism-mcp:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.mcp
+    env_file:
+      - ./.env
+    environment:
+      - PRISM_ENV=production
+    ports:
+      - "8062:8062"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    stdin_open: true
+    tty: true
+
+  PRISM-NOTIFIER:
+    container_name: PRISM-NOTIFIER
+    image: prism-notifier:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.notifier
+    env_file:
+      - ./.env
+    environment:
+      - PRISM_ENV=production
+      - PYTHONPATH=/app
+    depends_on:
+      - PRISM-API
+      - PRISM-Redis
+    volumes:
+      - ./src:/app/src:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+networks:
+  prism_net:
+    driver: bridge
+
+volumes:
+  redis_data:
+

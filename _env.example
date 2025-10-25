@@ -1,0 +1,83 @@
+# PRISM 環境変数 (example)
+PRISM_ENV=development
+API_KEY=your-secure-api-key-here
+OPENAI_API_KEY=sk-your-openai-key
+MCP_BASE_URL=http://localhost:8062
+
+# セキュリティ設定
+CORS_ORIGINS=http://localhost:8061,http://localhost:3000
+JWT_SECRET_KEY=your-jwt-secret-key-here
+ENCRYPTION_KEY=your-encryption-key-here
+
+# ログ設定
+LOG_LEVEL=INFO
+LOG_HUMAN=1
+LOG_FILE=logs/prism.log
+LOG_MAX_SIZE=10485760
+LOG_BACKUP_COUNT=5
+
+# キャッシュ設定
+REDIS_URL=redis://localhost:6379/0
+CACHE_TTL=3600
+CACHE_ENABLED=true
+
+# Notion
+NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_TASK_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_TODO_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# 自動仕訳設定
+AUTO_CLASSIFY_INTERVAL=120
+AUTO_CLASSIFY_ENABLED=true
+
+# 報告用メール設定
+REPORT_EMAIL_ENABLED=false
+REPORT_EMAIL_SMTP_HOST=smtp.gmail.com
+REPORT_EMAIL_SMTP_PORT=587
+REPORT_EMAIL_SMTP_USER=your-email@gmail.com
+REPORT_EMAIL_SMTP_PASSWORD=your-app-password
+REPORT_EMAIL_FROM=your-email@gmail.com
+REPORT_EMAIL_TO=recipient@example.com
+
+# 毎朝のタスク整理設定
+DAILY_SUMMARY_ENABLED=true
+DAILY_SUMMARY_TIME=08:00
+
+# 毎夕の振り返り設定
+DAILY_REFLECTION_ENABLED=true
+DAILY_REFLECTION_TIME=18:00
+
+# Googleカレンダー同期設定
+GOOGLE_CALENDAR_ENABLED=false
+GOOGLE_CALENDAR_SYNC_INTERVAL=300
+NOTION_TASK_DB_ID=your-task-database-id
+NOTION_TODO_DB_ID=your-todo-database-id
+
+# Google Tasks同期設定
+GOOGLE_TASKS_ENABLED=false
+GOOGLE_TASKS_SYNC_INTERVAL=300
+
+# Google OAuth
+GOOGLE_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GOOGLE_REDIRECT_URI=http://localhost  # デスクトップ/CLI用途ならこれでOK
+GOOGLE_CALENDAR_ID=primary            # 連携先カレンダー（primary or カレンダーID）
+TZ=Asia/Tokyo
+
+# Slack連携設定
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxxxxxxxx/xxxxxxxxx/xxxxxxxxx
+SLACK_BOT_TOKEN=xoxb-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+SLACK_DEFAULT_CHANNEL=#general
+
+# 通知自動化設定
+NOTIFICATION_SCHEDULER_ENABLED=true
+TASK_REMINDER_HOURS=24,2,1
+HABIT_CHECK_TIME=21:00
+SYSTEM_CHECK_INTERVAL=30
+
+# Notion追加データベース
+NOTION_HABIT_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_KNOWLEDGE_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_NOTE_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_INBOX_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_PROJECT_DB_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

@@ -1,0 +1,12 @@
+FROM nginx:1.27-alpine
+
+WORKDIR /usr/share/nginx/html
+
+COPY src/web/index.html ./index.html
+COPY src/web/app.js ./app.js
+COPY src/web/styles.css ./styles.css
+COPY src/web/manifest.json ./manifest.json
+COPY src/web/sw.js ./sw.js
+
+EXPOSE 80
+

@@ -1,0 +1,45 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus自身の監視
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PRISM API監視
+  - job_name: 'prism-api'
+    static_configs:
+      - targets: ['host.docker.internal:8060']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # PRISM Worker監視（メトリクスエンドポイントなし）
+  # - job_name: 'prism-worker'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:8001']
+  #   metrics_path: '/metrics'
+  #   scrape_interval: 30s
+
+  # PRISM MCP監視（メトリクスエンドポイントなし）
+  # - job_name: 'prism-mcp'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:8062']
+  #   metrics_path: '/metrics'
+  #   scrape_interval: 30s
+
+  # Node Exporter監視
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # システム全体の監視
+  - job_name: 'system'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+    scrape_interval: 30s

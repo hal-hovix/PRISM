@@ -1,0 +1,29 @@
+FROM python:3.11-slim
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# システムパッケージを更新
+RUN apt-get update && apt-get install -y \
+    curl \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+    # Pythonの依存関係をインストール
+    COPY requirements.mcp.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# アプリケーションコードをコピー
+COPY src/mcp_server/ ./src/mcp_server/
+COPY .env ./
+
+# 実行権限を付与
+RUN chmod +x src/mcp_server/notion_mcp_http_server.py
+
+# ヘルスチェック
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8062/health || exit 1
+
+# MCP HTTPサーバーを起動
+CMD ["python", "src/mcp_server/notion_mcp_http_server.py"]

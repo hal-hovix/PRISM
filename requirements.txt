@@ -1,0 +1,37 @@
+# PRISM Requirements
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+python-dotenv==1.0.0
+requests==2.31.0
+httpx==0.25.2
+pyyaml==6.0.1
+google-auth==2.23.4
+google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.1.1
+google-api-python-client==2.108.0
+
+# セキュリティ関連
+cryptography==41.0.7
+PyJWT==2.8.0
+python-multipart==0.0.6
+
+# テスト関連
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+httpx==0.25.2
+coverage==7.3.2
+
+# リンティング・型チェック
+flake8==6.1.0
+mypy==1.7.1
+black==23.11.0
+isort==5.12.0
+
+# セキュリティチェック
+bandit==1.7.5
+safety==3.0.1
+

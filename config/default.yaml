@@ -1,0 +1,21 @@
+./config/default.yaml - v1.0.0
+
+prism:
+  env: development
+  log:
+    human: true
+    level: INFO
+api:
+  cors:
+    origins: ["*"]
+llm:
+  provider: mock
+notion:
+  provider: mock
+mcp:
+  base_url: http://localhost:8062
+
+EOF ./config/default.yaml - v1.0.0
+# 修正履歴:
+# - 2025-10-20 v1.0.0: 既定設定
+

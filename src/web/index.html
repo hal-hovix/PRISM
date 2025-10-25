@@ -1,0 +1,552 @@
+./src/web/index.html - v1.0.0
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#6366f1" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>PRISM v2.0.0 - 分類・問い合わせ可能なToDo/習慣/知識ベース</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <div class="logo">
+          <i class="fas fa-cube"></i>
+          <h1>PRISM</h1>
+        </div>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+        <nav class="nav" id="nav">
+          <a href="#search" class="nav-link active" data-tab="search">
+            <i class="fas fa-search"></i> <span class="nav-text">検索</span>
+          </a>
+          <a href="#classify" class="nav-link" data-tab="classify">
+            <i class="fas fa-tags"></i> <span class="nav-text">分類</span>
+          </a>
+          <a href="#monitor" class="nav-link" data-tab="monitor">
+            <i class="fas fa-chart-line"></i> <span class="nav-text">監視</span>
+          </a>
+          <a href="#analytics" class="nav-link" data-tab="analytics">
+            <i class="fas fa-chart-bar"></i> <span class="nav-text">分析</span>
+          </a>
+          <a href="#assistant" class="nav-link" data-tab="assistant">
+            <i class="fas fa-robot"></i> <span class="nav-text">AI助手</span>
+          </a>
+          <a href="#reports" class="nav-link" data-tab="reports">
+            <i class="fas fa-file-alt"></i> <span class="nav-text">レポート</span>
+          </a>
+          <a href="#notifications" class="nav-link" data-tab="notifications">
+            <i class="fas fa-bell"></i> <span class="nav-text">通知</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="container">
+        <!-- 検索タブ -->
+        <section id="search" class="tab-content active">
+          <div class="card">
+            <div class="card-header">
+              <h2><i class="fas fa-search"></i> 検索・問い合わせ</h2>
+              <p>Notionデータベースから情報を検索します</p>
+            </div>
+            <div class="card-body">
+              <form id="query-form" class="form">
+                <div class="form-group">
+                  <label for="q">キーワード</label>
+                  <input type="text" id="q" placeholder="検索したいキーワードを入力..." />
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="type">タイプ</label>
+                    <select id="type">
+                      <option value="">すべて</option>
+                      <option value="Task">タスク</option>
+                      <option value="Knowledge">知識</option>
+                      <option value="Note">ノート</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="tag">タグ</label>
+                    <input type="text" id="tag" placeholder="タグ名" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>
+                      <input type="checkbox" id="semantic-search" checked />
+                      <span>セマンティック検索</span>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label for="search-limit">結果数</label>
+                    <select id="search-limit">
+                      <option value="10">10件</option>
+                      <option value="20" selected>20件</option>
+                      <option value="50">50件</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-search"></i> 検索
+                </button>
+              </form>
+              <div id="results" class="results"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 分類タブ -->
+        <section id="classify" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h2><i class="fas fa-tags"></i> 自動分類</h2>
+              <p>テキストを自動的に分類してNotionに登録します</p>
+            </div>
+            <div class="card-body">
+              <form id="classify-form" class="form">
+                <div class="form-group">
+                  <label for="title">タイトル</label>
+                  <input type="text" id="title" placeholder="分類したいアイテムのタイトル..." />
+                </div>
+                <div class="form-group">
+                  <label for="body">本文</label>
+                  <textarea id="body" placeholder="詳細な内容を入力..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-tags"></i> 分類実行
+                </button>
+              </form>
+              <div id="classify-out" class="results"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 監視タブ -->
+        <section id="monitor" class="tab-content">
+          <div class="card">
+            <div class="card-header">
+              <h2><i class="fas fa-chart-line"></i> システム監視</h2>
+              <p>PRISMシステムの状態とメトリクスを確認します</p>
+            </div>
+            <div class="card-body">
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-heartbeat"></i>
+                  </div>
+                  <div class="metric-content">
+                    <h3>API ステータス</h3>
+                    <div id="api-status" class="status-indicator">
+                      <span class="status-dot"></span>
+                      <span class="status-text">チェック中...</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-server"></i>
+                  </div>
+                  <div class="metric-content">
+                    <h3>システム情報</h3>
+                    <div id="system-info" class="system-info">
+                      <div class="info-item">
+                        <span class="info-label">CPU:</span>
+                        <span id="cpu-usage" class="info-value">-</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">メモリ:</span>
+                        <span id="memory-usage" class="info-value">-</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-icon">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                  <div class="metric-content">
+                    <h3>レスポンス時間</h3>
+                    <div id="response-time" class="response-time">
+                      <span class="time-value">-</span>
+                      <span class="time-unit">ms</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="actions">
+                <button id="refresh-metrics" class="btn btn-secondary">
+                  <i class="fas fa-sync-alt"></i> 更新
+                </button>
+                <a href="http://localhost:9090" target="_blank" class="btn btn-outline">
+                  <i class="fas fa-external-link-alt"></i> Prometheus
+                </a>
+                <a href="http://localhost:3000" target="_blank" class="btn btn-outline">
+                  <i class="fas fa-chart-bar"></i> Grafana
+                </a>
+              </div>
+            </div>
+          </div>
+               </section>
+
+               <!-- 分析タブ -->
+               <section id="analytics" class="tab-content">
+                 <div class="card">
+                   <div class="card-header">
+                     <h2><i class="fas fa-chart-bar"></i> 生産性分析</h2>
+                     <p>タスク完了率、カテゴリ分布、時間分析などの生産性指標を確認します</p>
+                   </div>
+                   <div class="card-body">
+                     <div class="analytics-controls">
+                       <div class="form-group">
+                         <label for="analytics-period">分析期間</label>
+                         <select id="analytics-period">
+                           <option value="7">過去7日間</option>
+                           <option value="30" selected>過去30日間</option>
+                           <option value="90">過去90日間</option>
+                         </select>
+                       </div>
+                       <button id="refresh-analytics" class="btn btn-primary">
+                         <i class="fas fa-sync-alt"></i> 更新
+                       </button>
+                     </div>
+                     
+                     <div class="analytics-grid">
+                       <!-- タスク完了統計 -->
+                       <div class="analytics-card">
+                         <div class="card-header">
+                           <h3><i class="fas fa-tasks"></i> タスク完了統計</h3>
+                         </div>
+                         <div class="card-body">
+                           <div class="stats-grid">
+                             <div class="stat-item">
+                               <div class="stat-value" id="total-tasks">-</div>
+                               <div class="stat-label">総タスク数</div>
+                             </div>
+                             <div class="stat-item">
+                               <div class="stat-value" id="completed-tasks">-</div>
+                               <div class="stat-label">完了タスク</div>
+                             </div>
+                             <div class="stat-item">
+                               <div class="stat-value" id="completion-rate">-</div>
+                               <div class="stat-label">完了率</div>
+                             </div>
+                             <div class="stat-item">
+                               <div class="stat-value" id="overdue-tasks">-</div>
+                               <div class="stat-label">期限切れ</div>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+
+                       <!-- カテゴリ分布 -->
+                       <div class="analytics-card">
+                         <div class="card-header">
+                           <h3><i class="fas fa-tags"></i> カテゴリ分布</h3>
+                         </div>
+                         <div class="card-body">
+                           <div id="category-chart" class="chart-container">
+                             <div class="chart-placeholder">データを読み込み中...</div>
+                           </div>
+                         </div>
+                       </div>
+
+                       <!-- 時間分析 -->
+                       <div class="analytics-card">
+                         <div class="card-header">
+                           <h3><i class="fas fa-clock"></i> 時間分析</h3>
+                         </div>
+                         <div class="card-body">
+                           <div id="time-chart" class="chart-container">
+                             <div class="chart-placeholder">データを読み込み中...</div>
+                           </div>
+                         </div>
+                       </div>
+
+                       <!-- 習慣・知識 -->
+                       <div class="analytics-card">
+                         <div class="card-header">
+                           <h3><i class="fas fa-chart-pie"></i> 習慣・知識</h3>
+                         </div>
+                         <div class="card-body">
+                           <div class="stats-grid">
+                             <div class="stat-item">
+                               <div class="stat-value" id="habit-completion">-</div>
+                               <div class="stat-label">習慣完了率</div>
+                             </div>
+                             <div class="stat-item">
+                               <div class="stat-value" id="knowledge-growth">-</div>
+                               <div class="stat-label">新規知識</div>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </section>
+
+               <!-- AIアシスタントタブ -->
+               <section id="assistant" class="tab-content">
+                 <div class="card">
+                   <div class="card-header">
+                     <h2><i class="fas fa-robot"></i> AI アシスタント</h2>
+                     <p>自然言語でPRISMシステムと対話し、生産性向上のアドバイスを受けられます</p>
+                   </div>
+                   <div class="card-body">
+                     <div class="assistant-container">
+                       <div class="chat-messages" id="chat-messages">
+                         <div class="message assistant-message">
+                           <div class="message-content">
+                             <i class="fas fa-robot"></i>
+                             <p>こんにちは！私はPRISMのAIアシスタントです。タスク管理、習慣追跡、知識管理について何でもお聞きください。どのようにお手伝いできますか？</p>
+                           </div>
+                           <div class="message-time" id="initial-time"></div>
+                         </div>
+                       </div>
+                       
+                       <div class="chat-input-container">
+                         <form id="chat-form" class="chat-form">
+                           <div class="input-group">
+                             <input type="text" id="chat-input" placeholder="メッセージを入力..." autocomplete="off" />
+                             <button type="submit" class="btn btn-primary">
+                               <i class="fas fa-paper-plane"></i>
+                             </button>
+                           </div>
+                         </form>
+                         
+                         <div class="quick-actions">
+                           <button class="btn btn-outline btn-sm" onclick="askProductivityInsights()">
+                             <i class="fas fa-lightbulb"></i> 生産性の洞察
+                           </button>
+                           <button class="btn btn-outline btn-sm" onclick="askTaskStatus()">
+                             <i class="fas fa-tasks"></i> タスク状況
+                           </button>
+                           <button class="btn btn-outline btn-sm" onclick="askHabitProgress()">
+                             <i class="fas fa-chart-line"></i> 習慣の進捗
+                           </button>
+                           <button class="btn btn-outline btn-sm" onclick="clearChat()">
+                             <i class="fas fa-trash"></i> チャットをクリア
+                           </button>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </section>
+
+               <!-- レポートタブ -->
+               <section id="reports" class="tab-content">
+                 <div class="card">
+                   <div class="card-header">
+                     <h2><i class="fas fa-file-alt"></i> 自動レポート生成</h2>
+                     <p>週次・月次レポートを自動生成し、生産性の分析と改善提案を受けられます</p>
+                   </div>
+                   <div class="card-body">
+                     <div class="reports-container">
+                       <div class="report-controls">
+                         <div class="form-row">
+                           <div class="form-group">
+                             <label for="report-type">レポートタイプ</label>
+                             <select id="report-type">
+                               <option value="weekly">週次レポート</option>
+                               <option value="monthly">月次レポート</option>
+                               <option value="custom">カスタムレポート</option>
+                             </select>
+                           </div>
+                           <div class="form-group" id="custom-dates" style="display: none;">
+                             <label for="start-date">開始日</label>
+                             <input type="date" id="start-date" />
+                           </div>
+                           <div class="form-group" id="custom-end-date" style="display: none;">
+                             <label for="end-date">終了日</label>
+                             <input type="date" id="end-date" />
+                           </div>
+                           <div class="form-group">
+                             <label for="report-template">テンプレート</label>
+                             <select id="report-template">
+                               <option value="standard">標準レポート</option>
+                               <option value="detailed">詳細レポート</option>
+                               <option value="summary">サマリーレポート</option>
+                             </select>
+                           </div>
+                         </div>
+                         <div class="actions">
+                           <button id="generate-report" class="btn btn-primary">
+                             <i class="fas fa-file-alt"></i> レポート生成
+                           </button>
+                           <button id="download-report" class="btn btn-outline" style="display: none;">
+                             <i class="fas fa-download"></i> ダウンロード
+                           </button>
+                         </div>
+                       </div>
+                       
+                       <div class="report-preview" id="report-preview" style="display: none;">
+                         <div class="report-header">
+                           <h3 id="report-title">レポート</h3>
+                           <div class="report-meta">
+                             <span id="report-period"></span>
+                             <span id="report-generated-at"></span>
+                           </div>
+                         </div>
+                         <div class="report-content" id="report-content">
+                           <!-- レポート内容がここに表示されます -->
+                         </div>
+                       </div>
+                       
+                       <div class="report-loading" id="report-loading" style="display: none;">
+                         <div class="loading-spinner">
+                           <i class="fas fa-spinner fa-spin"></i>
+                           <p>レポートを生成中...</p>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </section>
+
+               <!-- 通知設定タブ -->
+               <section id="notifications" class="tab-content">
+                 <div class="card">
+                   <div class="card-header">
+                     <h2><i class="fas fa-bell"></i> 通知設定</h2>
+                     <p>メール・Slack通知の設定とテストを行えます</p>
+                   </div>
+                   <div class="card-body">
+                     <div class="notifications-container">
+                       <div class="notification-settings">
+                         <h3><i class="fas fa-cog"></i> 通知設定</h3>
+                         
+                         <form id="notification-settings-form">
+                           <div class="form-section">
+                             <h4><i class="fas fa-envelope"></i> メール通知</h4>
+                             <div class="form-row">
+                               <div class="form-group">
+                                 <label>
+                                   <input type="checkbox" id="email-enabled" checked />
+                                   <span>メール通知を有効にする</span>
+                                 </label>
+                               </div>
+                               <div class="form-group">
+                                 <label for="email-frequency">通知頻度</label>
+                                 <select id="email-frequency">
+                                   <option value="daily">毎日</option>
+                                   <option value="weekly">毎週</option>
+                                   <option value="monthly">毎月</option>
+                                   <option value="custom">カスタム</option>
+                                 </select>
+                               </div>
+                               <div class="form-group">
+                                 <label for="email-time">通知時間</label>
+                                 <input type="time" id="email-time" value="09:00" />
+                               </div>
+                             </div>
+                           </div>
+                           
+                           <div class="form-section">
+                             <h4><i class="fab fa-slack"></i> Slack通知</h4>
+                             <div class="form-row">
+                               <div class="form-group">
+                                 <label>
+                                   <input type="checkbox" id="slack-enabled" />
+                                   <span>Slack通知を有効にする</span>
+                                 </label>
+                               </div>
+                               <div class="form-group">
+                                 <label for="slack-webhook-url">Webhook URL</label>
+                                 <input type="url" id="slack-webhook-url" placeholder="https://hooks.slack.com/services/..." />
+                               </div>
+                               <div class="form-group">
+                                 <label for="slack-channel">チャンネル</label>
+                                 <input type="text" id="slack-channel" placeholder="#general" />
+                               </div>
+                             </div>
+                           </div>
+                           
+                           <div class="form-section">
+                             <h4><i class="fas fa-bell"></i> 通知タイプ</h4>
+                             <div class="form-row">
+                               <div class="form-group">
+                                 <label>
+                                   <input type="checkbox" id="task-reminders" checked />
+                                   <span>タスクリマインダー</span>
+                                 </label>
+                               </div>
+                               <div class="form-group">
+                                 <label>
+                                   <input type="checkbox" id="habit-notifications" checked />
+                                   <span>習慣通知</span>
+                                 </label>
+                               </div>
+                               <div class="form-group">
+                                 <label>
+                                   <input type="checkbox" id="system-alerts" checked />
+                                   <span>システムアラート</span>
+                                 </label>
+                               </div>
+                             </div>
+                           </div>
+                           
+                           <div class="actions">
+                             <button type="submit" class="btn btn-primary">
+                               <i class="fas fa-save"></i> 設定を保存
+                             </button>
+                             <button type="button" id="load-settings" class="btn btn-outline">
+                               <i class="fas fa-download"></i> 設定を読み込み
+                             </button>
+                           </div>
+                         </form>
+                       </div>
+                       
+                       <div class="notification-testing">
+                         <h3><i class="fas fa-vial"></i> 通知テスト</h3>
+                         <div class="test-buttons">
+                           <button id="test-email" class="btn btn-outline">
+                             <i class="fas fa-envelope"></i> メールテスト
+                           </button>
+                           <button id="test-slack" class="btn btn-outline">
+                             <i class="fab fa-slack"></i> Slackテスト
+                           </button>
+                           <button id="test-system" class="btn btn-outline">
+                             <i class="fas fa-exclamation-triangle"></i> システムアラートテスト
+                           </button>
+                         </div>
+                         <div id="test-results" class="test-results"></div>
+                       </div>
+                       
+                       <div class="notification-status">
+                         <h3><i class="fas fa-info-circle"></i> 通知ステータス</h3>
+                         <div id="notification-status" class="status-grid">
+                           <!-- ステータス情報がここに表示されます -->
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </section>
+             </div>
+           </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2025 PRISM v2.0.0 - 分類・問い合わせ可能なToDo/習慣/知識ベース</p>
+      </div>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
+
+EOF ./src/web/index.html - v1.0.0
+# 修正履歴:
+# - 2025-10-20 v1.0.0: シンプルなWeb UI
+

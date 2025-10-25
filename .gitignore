@@ -1,0 +1,83 @@
+# =====================================
+# 🧩 PRISM / Notion プロジェクト用 .gitignore
+# =====================================
+
+# --- 環境変数・認証情報 ---
+.env
+*.env
+.env.local
+.env.development
+.env.production
+
+# --- SSH鍵・秘密鍵 ---
+# PRISMプロジェクトでは ~/.ssh/id_ed25519 を使用
+# ワークスペース内に鍵ファイルを配置しないこと
+*.pem
+*.key
+*.pub
+195603
+195603.pub
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# --- OS / エディタ生成ファイル ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.log
+
+# --- テスト用ファイル ---
+tests/
+
+# --- Node.js 関連 ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.cache/
+.temp/
+
+# --- Python 関連 ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+.Python
+.env/
+venv/
+.venv/
+pip-log.txt
+*.manifest
+*.spec
+
+# --- IDE / エディタ関連 ---
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# --- Notion / PRISM出力データ ---
+*.csv
+*.zip
+*.bak
+/export/
+# （※CSVエクスポートを手動で保存する場合は残してもOK）
+
+# --- OS一時ファイル ---
+ehthumbs.db
+Desktop.ini
+Icon?
+token.pickle
+token_tasks.pickle
+.env.backup
+env.txt
+credentials.json

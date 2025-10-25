@@ -1,0 +1,303 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # コード品質チェック
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Code formatting check (black)
+      run: |
+        black --check --diff src/ tests/
+        
+    - name: Import sorting check (isort)
+      run: |
+        isort --check-only --diff src/ tests/
+        
+    - name: Linting (flake8)
+      run: |
+        flake8 src/ tests/ --max-line-length=100 --ignore=E203,W503
+        
+    - name: Type checking (mypy)
+      run: |
+        mypy src/ --ignore-missing-imports
+        
+    - name: Security check (bandit)
+      run: |
+        bandit -r src/ -f json -o bandit-report.json
+        
+    - name: Dependency security check (safety)
+      run: |
+        safety check --json --output safety-report.json
+
+  # テスト実行
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run unit tests
+      run: |
+        python tools/run_tests.py --type unit --coverage
+        
+    - name: Run integration tests
+      run: |
+        python tools/run_tests.py --type integration --coverage
+        
+    - name: Run async tests
+      run: |
+        python tools/run_tests.py --type async --coverage
+        
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  # Docker イメージビルド
+  build-docker:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [quality-check, test]
+    if: github.event_name == 'push'
+    
+    strategy:
+      matrix:
+        service: [api, web, worker, mcp]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker/Dockerfile.${{ matrix.service }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # デプロイメントテスト
+  deploy-test:
+    name: Deployment Test
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Create test environment
+      run: |
+        # テスト用のdocker-composeファイルを作成
+        cp docker-compose.yml docker-compose.test.yml
+        # テスト用の設定を適用
+        sed -i 's/prism-api:latest/ghcr.io\/${{ github.repository }}-api:latest/g' docker-compose.test.yml
+        sed -i 's/prism-web:latest/ghcr.io\/${{ github.repository }}-web:latest/g' docker-compose.test.yml
+        sed -i 's/prism-worker:latest/ghcr.io\/${{ github.repository }}-worker:latest/g' docker-compose.test.yml
+        sed -i 's/prism-mcp:latest/ghcr.io\/${{ github.repository }}-mcp:latest/g' docker-compose.test.yml
+        
+    - name: Start test environment
+      run: |
+        docker-compose -f docker-compose.test.yml up -d
+        
+    - name: Wait for services
+      run: |
+        sleep 30
+        docker-compose -f docker-compose.test.yml ps
+        
+    - name: Health check
+      run: |
+        # API ヘルスチェック
+        curl -f http://localhost:8060/healthz || exit 1
+        # Web ヘルスチェック
+        curl -f http://localhost:8061/ || exit 1
+        
+    - name: Run smoke tests
+      run: |
+        # 基本的なAPIテスト
+        curl -f -H "Authorization: Bearer test-api-key" http://localhost:8060/healthz/detailed || exit 1
+        curl -f http://localhost:8060/metrics || exit 1
+        
+    - name: Cleanup test environment
+      if: always()
+      run: |
+        docker-compose -f docker-compose.test.yml down -v
+
+  # セキュリティスキャン
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ghcr.io/${{ env.IMAGE_NAME }}-api:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # パフォーマンステスト
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    needs: deploy-test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run performance tests
+      run: |
+        python tools/run_tests.py --performance
+        
+    - name: Generate performance report
+      run: |
+        # パフォーマンスレポートを生成
+        echo "Performance test completed" > performance-report.txt
+        echo "Date: $(date)" >> performance-report.txt
+        
+    - name: Upload performance report
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-report
+        path: performance-report.txt
+
+  # 通知
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [quality-check, test, build-docker, deploy-test, security-scan, performance-test]
+    if: always()
+    
+    steps:
+    - name: Notify success
+      if: ${{ needs.quality-check.result == 'success' && needs.test.result == 'success' && needs.build-docker.result == 'success' }}
+      run: |
+        echo "✅ All CI/CD pipeline steps completed successfully!"
+        echo "🚀 PRISM system is ready for deployment"
+        
+    - name: Notify failure
+      if: ${{ needs.quality-check.result == 'failure' || needs.test.result == 'failure' || needs.build-docker.result == 'failure' }}
+      run: |
+        echo "❌ CI/CD pipeline failed!"
+        echo "Please check the logs for details"
+        exit 1
